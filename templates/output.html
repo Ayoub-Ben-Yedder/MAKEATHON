@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Retrieval Plan</title></head>
+<body>
+	<h1>Retrieval Plan</h1>
+	<p>Requested: {{plan.requested}} — Fulfilled: {{plan.fulfilled}} — Remaining: {{plan.remaining}}</p>
+	<form method="post" action="/retrieve/confirm">
+		<input type="hidden" name="plan" value='{{ plan.plan | tojson }}'>
+		<table>
+			<tr><th>Box ID</th><th>Cell</th><th>Available</th><th>Take</th></tr>
+			{% for item in plan.plan %}
+			<tr>
+				<td>{{item.box_id}}</td>
+				<td>{{item.cell_id}}</td>
+				<td>{{item.available}}</td>
+				<td>{{item.take}}</td>
+			</tr>
+			{% endfor %}
+		</table>
+		<button type="submit">Confirm Retrieval</button>
+	</form>
+	<p><a href="/admin">Back</a></p>
+</body>
+</html>

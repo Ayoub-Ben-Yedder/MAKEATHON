@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Inventory Admin</title>
+	<style>body{font-family:Arial; margin:20px;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:6px}</style>
+</head>
+<body>
+	<h1>Inventory Admin</h1>
+	<p><a href="/init">Initialize DB / seed cells</a> | <a href="/store">Store box</a></p>
+
+	<h2>Products</h2>
+	<table>
+		<tr><th>ID</th><th>Name</th><th>Weight dry</th></tr>
+		{% for p in products %}
+		<tr><td>{{p.id}}</td><td>{{p.name}}</td><td>{{p.weight_dry}}</td></tr>
+		{% endfor %}
+	</table>
+
+	<h2>Boxes</h2>
+	<table>
+		<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th></tr>
+		{% for b in boxes %}
+		<tr>
+			<td>{{b.id}}</td>
+			<td>{{b.product_id}}</td>
+			<td>{{b.cell_id}}</td>
+			<td>{{b.quantity}}</td>
+			<td>{{b.added_at}}</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	<h2>Quick Retrieve</h2>
+	<form action="/retrieve/plan" method="post">
+		<label>Product ID: <input name="product_id" required></label>
+		<label>Quantity: <input name="quantity" type="number" required></label>
+		<button type="submit">Plan Retrieval</button>
+	</form>
+
+</body>
+</html>

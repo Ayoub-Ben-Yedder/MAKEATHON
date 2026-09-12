@@ -307,7 +307,7 @@ def store():
 		latest_input_state['message'] = 'Box stored successfully'
 		latest_input_state['detected_product_id'] = product.id
 		latest_input_state['detected_product_name'] = product.name
-	return redirect(url_for('admin'))
+	return redirect(url_for('store'))
 
 
 @app.route('/api/input/capture', methods=['POST'])

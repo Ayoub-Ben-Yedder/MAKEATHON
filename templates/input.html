@@ -293,10 +293,13 @@
 			</div>
 
 			<form method="post" action="/store" class="form-grid">
-				<input id="productIdInput" name="product_id" type="hidden">
+				<label>
+					Product id
+					<input id="productIdInput" name="product_id" placeholder="e.g 1" >
+				</label>
 				<label>
 					Product name
-					<input id="productNameInput" name="name" required placeholder="e.g Product A">
+					<input id="productNameInput" name="name" placeholder="e.g Product A">
 				</label>
 				<label>
 					Quantity

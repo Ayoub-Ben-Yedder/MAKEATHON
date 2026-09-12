@@ -78,13 +78,15 @@ def init():
 	db = get_session()
 	try:
 		if db.query(Cell).count() == 0:
-			for y in range(4):
-				for x in range(5):
+			for y in range(2):
+				for x in range(1):
 					db.add(Cell(x=x, y=y, capacity=4))
-			db.commit()
+		if db.query(Product).count() == 0:
+			db.add_all([Product(name="A", weight_dry=50, weight_wet=55), Product(name="B", weight_dry=10, weight_wet=12)])
+		db.commit()
 	finally:
 		db.close()
-	return 'initialized'
+	return redirect(url_for('admin'))
 
 
 @app.route('/admin')

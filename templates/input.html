@@ -73,6 +73,24 @@
 			capturePreview: document.getElementById('capturePreview')
 		};
 
+		// Track recent manual edits to avoid overwriting user input
+		let productIdEdited = false;
+		let productIdEditedTimer = null;
+		let quantityEdited = false;
+		let quantityEditedTimer = null;
+
+		stateEls.productIdInput.addEventListener('input', () => {
+			productIdEdited = true;
+			if (productIdEditedTimer) clearTimeout(productIdEditedTimer);
+			productIdEditedTimer = setTimeout(() => { productIdEdited = false; productIdEditedTimer = null; }, 30000);
+		});
+
+		stateEls.quantityInput.addEventListener('input', () => {
+			quantityEdited = true;
+			if (quantityEditedTimer) clearTimeout(quantityEditedTimer);
+			quantityEditedTimer = setTimeout(() => { quantityEdited = false; quantityEditedTimer = null; }, 30000);
+		});
+
 		function setText(el, value) {
 			el.textContent = value === null || value === undefined || value === '' ? '-' : String(value);
 		}
@@ -85,14 +103,22 @@
 			stateEls.statusMessage.textContent = state.message || 'Waiting for device input';
 
 			if (state.detected_product_id) {
-				stateEls.productIdInput.value = state.detected_product_id;
+				// Only autofill the product id when the input isn't focused
+				if (document.activeElement !== stateEls.productIdInput) {
+					if (!stateEls.productIdInput.value || stateEls.productIdInput.value !== String(state.detected_product_id)) {
+						stateEls.productIdInput.value = state.detected_product_id;
+					}
+				}
 			}
 
 			if (state.detected_product_name && !stateEls.productNameInput.value) {
-				stateEls.productNameInput.value = state.detected_product_name;
+				// Don't overwrite when user is editing the product name
+				if (document.activeElement !== stateEls.productNameInput) {
+					stateEls.productNameInput.value = state.detected_product_name;
+				}
 			}
 
-			if (state.estimated_quantity && Number(state.estimated_quantity) > 0) {
+			if (state.estimated_quantity && Number(state.estimated_quantity) > 0 && document.activeElement !== stateEls.quantityInput) {
 				stateEls.quantityInput.value = state.estimated_quantity;
 			}
 

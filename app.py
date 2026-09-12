@@ -372,6 +372,7 @@ def input_capture():
 
 
 @app.route('/api/input/weight', methods=['POST'])
+@app.route('/api/weight', methods=['POST'])
 def input_weight():
 	payload = request.get_json(silent=True) or {}
 	weight_raw = payload.get('weight', request.form.get('weight'))

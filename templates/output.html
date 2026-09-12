@@ -4,334 +4,12 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Retrieval Plan</title>
-	<style>
-		@font-face {
-			font-family: "Aeonik";
-			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Regular.otf') }}") format("opentype");
-			font-weight: 400;
-			font-style: normal;
-		}
-
-		@font-face {
-			font-family: "Aeonik";
-			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Bold.otf') }}") format("opentype");
-			font-weight: 700;
-			font-style: normal;
-		}
-
-		@font-face {
-			font-family: "Monument";
-			src: url("{{ url_for('static', filename='fonts/MonumentExtended-Regular.otf') }}") format("opentype");
-			font-weight: 400;
-			font-style: normal;
-		}
-
-		:root {
-			--bg-dark: #031a4d;
-			--bg-mid: #0b2f7f;
-			--panel: #ffffff;
-			--panel-line: #c9d6ff;
-			--table-head: #e8efff;
-			--text: #0c1d44;
-			--text-soft: #5d6d97;
-			--accent: #0f4de2;
-			--accent-hover: #0b3eb8;
-			--success: #0d7a4f;
-			--warning: #a46a00;
-		}
-
-		* { box-sizing: border-box; }
-
-		body {
-			margin: 0;
-			min-height: 100vh;
-			font-family: "Aeonik", sans-serif;
-			background:
-				radial-gradient(circle at 15% 10%, rgba(95, 156, 255, 0.35), transparent 45%),
-				radial-gradient(circle at 85% 90%, rgba(26, 73, 201, 0.4), transparent 40%),
-				linear-gradient(140deg, var(--bg-dark), var(--bg-mid));
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 20px;
-			color: var(--text);
-		}
-
-		.panel {
-			width: 100%;
-			max-width: 980px;
-			background: var(--panel);
-			border: 1px solid var(--panel-line);
-			border-radius: 18px;
-			box-shadow: 0 16px 40px rgba(0, 22, 88, 0.25);
-			overflow: hidden;
-		}
-
-		.panel-top {
-			background: linear-gradient(95deg, #052675, #0b49d1);
-			color: #fff;
-			padding: 16px 20px;
-			display: flex;
-			align-items: center;
-			gap: 14px;
-		}
-
-		.logo {
-			width: 48px;
-			height: 48px;
-			object-fit: contain;
-			background: rgba(255, 255, 255, 0.12);
-			border-radius: 12px;
-			padding: 6px;
-		}
-
-		.title {
-			margin: 0;
-			font-family: "Monument", sans-serif;
-			font-size: 18px;
-			letter-spacing: 0.02em;
-		}
-
-		.subtitle {
-			margin: 4px 0 0;
-			font-size: 13px;
-			opacity: 0.9;
-		}
-
-		.panel-body {
-			padding: 22px 20px 20px;
-		}
-
-		.layout {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) 1.2fr;
-			gap: 16px;
-		}
-
-		.section {
-			border: 1px solid var(--panel-line);
-			border-radius: 14px;
-			background: #fbfdff;
-			padding: 16px;
-		}
-
-		h2 {
-			margin: 0 0 12px;
-			font-size: 17px;
-			font-family: "Monument", sans-serif;
-			font-weight: 400;
-		}
-
-		p {
-			margin: 0;
-		}
-
-		.helper {
-			color: var(--text-soft);
-			font-size: 13px;
-			line-height: 1.5;
-			margin-top: 6px;
-		}
-
-		.stats {
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 10px;
-			margin-bottom: 14px;
-		}
-
-		.stat {
-			background: #f4f8ff;
-			border: 1px solid var(--panel-line);
-			border-radius: 10px;
-			padding: 10px 12px;
-			min-width: 0;
-		}
-
-		.stat-label {
-			font-size: 11px;
-			text-transform: uppercase;
-			letter-spacing: 0.04em;
-			color: var(--text-soft);
-			margin: 0 0 4px;
-		}
-
-		.stat-value {
-			margin: 0;
-			font-size: 22px;
-			font-weight: 700;
-		}
-
-		.retrieval-form {
-			display: grid;
-			gap: 12px;
-		}
-
-		label {
-			display: grid;
-			gap: 6px;
-			font-size: 13px;
-			font-weight: 700;
-			color: var(--text);
-		}
-
-		input {
-			height: 44px;
-			border: 1px solid var(--panel-line);
-			border-radius: 10px;
-			padding: 0 12px;
-			font-size: 15px;
-			font-family: "Aeonik", sans-serif;
-			color: var(--text);
-			outline: none;
-			transition: border-color 0.2s ease, box-shadow 0.2s ease;
-		}
-
-		input:focus {
-			border-color: var(--accent);
-			box-shadow: 0 0 0 3px rgba(15, 77, 226, 0.16);
-		}
-
-		.notice {
-			border-radius: 12px;
-			padding: 12px 14px;
-			font-size: 13px;
-			line-height: 1.45;
-		}
-
-		.notice.info {
-			background: #eef4ff;
-			color: var(--text);
-			border: 1px solid var(--panel-line);
-		}
-
-		.notice.error {
-			background: #fff5f5;
-			color: #8f1e2f;
-			border: 1px solid #f2b5c0;
-		}
-
-		.notice.warning {
-			background: #fff8eb;
-			color: var(--warning);
-			border: 1px solid #f0d79b;
-		}
-
-		.summary {
-			display: grid;
-			gap: 10px;
-			margin-bottom: 14px;
-		}
-
-		.summary-row {
-			display: flex;
-			justify-content: space-between;
-			gap: 10px;
-			padding: 10px 12px;
-			border: 1px solid var(--panel-line);
-			border-radius: 10px;
-			background: #fff;
-		}
-
-		.summary-label {
-			font-size: 12px;
-			text-transform: uppercase;
-			letter-spacing: 0.04em;
-			color: var(--text-soft);
-		}
-
-		.summary-value {
-			font-size: 14px;
-			font-weight: 700;
-			color: var(--text);
-			text-align: right;
-		}
-
-		table {
-			border-collapse: collapse;
-			width: 100%;
-			background: #fff;
-			border-radius: 10px;
-			overflow: hidden;
-			display: block;
-			overflow-x: auto;
-		}
-
-		th,
-		td {
-			border: 1px solid var(--panel-line);
-			padding: 9px;
-			text-align: left;
-			white-space: nowrap;
-		}
-
-		th {
-			background: var(--table-head);
-			font-weight: 700;
-		}
-
-		.actions {
-			margin-top: 6px;
-			display: flex;
-			gap: 10px;
-			align-items: center;
-			flex-wrap: wrap;
-		}
-
-		button {
-			height: 44px;
-			border: 0;
-			border-radius: 10px;
-			background: var(--accent);
-			color: #fff;
-			font-size: 14px;
-			font-weight: 700;
-			font-family: "Aeonik", sans-serif;
-			padding: 0 14px;
-			cursor: pointer;
-			transition: background 0.2s ease, transform 0.2s ease;
-		}
-
-		button:hover {
-			background: var(--accent-hover);
-			transform: translateY(-1px);
-		}
-
-		a {
-			color: var(--accent);
-			text-decoration: none;
-			font-size: 14px;
-			font-weight: 700;
-		}
-
-		a:hover { text-decoration: underline; }
-
-		@media (max-width: 860px) {
-			.layout {
-				grid-template-columns: 1fr;
-			}
-
-			.stats {
-				grid-template-columns: 1fr;
-			}
-		}
-
-		@media (max-width: 700px) {
-			body { padding: 12px; }
-			.panel-top { padding: 14px; }
-			.panel-body { padding: 14px; }
-			.title { font-size: 15px; }
-			.logo { width: 42px; height: 42px; }
-			.stat-value { font-size: 20px; }
-			button { width: 100%; }
-			.actions { flex-direction: column; align-items: stretch; }
-		}
-	</style>
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/hmi.css') }}">
 </head>
-<body>
-	<main class="panel">
+<body class="stack">
+	<main class="panel panel--wide">
 		<div class="panel-top">
-			<img class="logo" src="{{ url_for('static', filename='imgs/logo.png') }}" alt="Logo">
+			<img class="logo" src="{{ url_for('static', filename='logo/logo.png') }}" alt="Logo">
 			<div>
 				<h1 class="title">Retrieval HMI Panel</h1>
 				<p class="subtitle">Validate and execute FIFO retrieval operations</p>
@@ -344,12 +22,12 @@
 					<h2>Retrieve Products</h2>
 					<p class="helper">Choose a product and quantity, then generate the FIFO plan for the operator to execute.</p>
 					{% if error_message %}
-					<div class="notice error" style="margin-top: 12px;">{{ error_message }}</div>
+					<div class="notice error spaced-top">{{ error_message }}</div>
 					{% elif not plan %}
-					<div class="notice info" style="margin-top: 12px;">No plan loaded yet. Submit the form to build a retrieval list.</div>
+					<div class="notice info spaced-top">No plan loaded yet. Submit the form to build a retrieval list.</div>
 					{% endif %}
 
-					<form method="post" action="/retrieve/plan" class="retrieval-form" style="margin-top: 14px;">
+					<form method="post" action="/retrieve/plan" class="retrieval-form spaced-top">
 						<label>
 							Product ID
 							<input name="product_id" type="number" min="1" required value="{{ product_id or '' }}" placeholder="e.g. 1">
@@ -368,7 +46,7 @@
 				<section class="section">
 					<h2>Plan Preview</h2>
 					{% if confirmation_message %}
-					<div class="notice info" style="margin-bottom: 12px; background: #eaf8f1; color: var(--success); border-color: #bfe8d1;">{{ confirmation_message }}</div>
+					<div class="notice success spaced-bottom">{{ confirmation_message }}</div>
 					{% endif %}
 					{% if plan %}
 					<div class="stats">
@@ -389,7 +67,8 @@
 					{% if plan.plan %}
 					<form method="post" action="/retrieve/confirm">
 						<input type="hidden" name="plan" value='{{ plan.plan | tojson }}'>
-						<table>
+						<div class="table-wrap">
+							<table>
 							<tr><th>Box ID</th><th>Cell</th><th>Available</th><th>Take</th></tr>
 							{% for item in plan.plan %}
 							<tr>
@@ -399,7 +78,8 @@
 								<td>{{ item.take }}</td>
 							</tr>
 							{% endfor %}
-						</table>
+							</table>
+						</div>
 						<div class="actions">
 							<button type="submit">Confirm Retrieval</button>
 						</div>

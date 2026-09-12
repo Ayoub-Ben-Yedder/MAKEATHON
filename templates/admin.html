@@ -3,30 +3,105 @@
 <head>
 	<meta charset="utf-8">
 	<title>Inventory Admin</title>
-	<style>body{font-family:Arial; margin:20px;} table{border-collapse:collapse;} td,th{border:1px solid #ccc;padding:6px}</style>
+	<style>
+		body { font-family: Arial; margin: 20px; }
+		table { border-collapse: collapse; margin-bottom: 20px; width: 100%; }
+		td, th { border: 1px solid #ccc; padding: 6px; text-align: left; }
+		form.inline { display: inline-block; margin: 0; }
+		.row-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+		input[type="number"], input[type="text"], input[type="datetime-local"] { width: 120px; }
+		h2 { margin-top: 28px; }
+		.actions { white-space: nowrap; }
+	</style>
 </head>
 <body>
 	<h1>Inventory Admin</h1>
-	<p><a href="/init">Initialize DB / seed cells</a> | <a href="/store">Store box</a></p>
+	<p><a href="/init">Initialize DB / seed cells</a></p>
+
+	<h2>Create Product</h2>
+	<form action="/admin/products/create" method="post" class="row-form">
+		<label>Name: <input name="name" required></label>
+		<label>Weight dry: <input name="weight_dry" type="number" step="0.01"></label>
+		<label>Weight wet: <input name="weight_wet" type="number" step="0.01"></label>
+		<button type="submit">Create</button>
+	</form>
 
 	<h2>Products</h2>
 	<table>
-		<tr><th>ID</th><th>Name</th><th>Weight dry</th></tr>
+		<tr><th>ID</th><th>Name</th><th>Weight Dry</th><th>Weight Wet</th><th>Actions</th></tr>
 		{% for p in products %}
-		<tr><td>{{p.id}}</td><td>{{p.name}}</td><td>{{p.weight_dry}}</td></tr>
+		<tr>
+			<td>{{p.id}}</td>
+			<td><input name="name" value="{{p.name}}" form="product-update-{{p.id}}" required></td>
+			<td><input name="weight_dry" type="number" step="0.01" value="{{p.weight_dry if p.weight_dry is not none else ''}}" form="product-update-{{p.id}}"></td>
+			<td><input name="weight_wet" type="number" step="0.01" value="{{p.weight_wet if p.weight_wet is not none else ''}}" form="product-update-{{p.id}}"></td>
+			<td class="actions">
+				<form id="product-update-{{p.id}}" action="/admin/products/{{p.id}}/update" method="post" class="inline">
+					<button type="submit">Update</button>
+				</form>
+				<form action="/admin/products/{{p.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this product and all its boxes?')">
+					<button type="submit">Delete</button>
+				</form>
+			</td>
+		</tr>
 		{% endfor %}
 	</table>
 
+	<h2>Create Box</h2>
+	<form action="/admin/boxes/create" method="post" class="row-form">
+		<label>Product ID: <input name="product_id" type="number" required></label>
+		<label>Cell ID: <input name="cell_id" type="number"></label>
+		<label>Quantity: <input name="quantity" type="number" min="0" required></label>
+		<button type="submit">Create</button>
+	</form>
+
 	<h2>Boxes</h2>
 	<table>
-		<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th></tr>
+		<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th><th>Actions</th></tr>
 		{% for b in boxes %}
 		<tr>
 			<td>{{b.id}}</td>
-			<td>{{b.product_id}}</td>
-			<td>{{b.cell_id}}</td>
-			<td>{{b.quantity}}</td>
-			<td>{{b.added_at}}</td>
+			<td><input name="product_id" type="number" value="{{b.product_id}}" form="box-update-{{b.id}}" required></td>
+			<td><input name="cell_id" type="number" value="{{b.cell_id if b.cell_id is not none else ''}}" form="box-update-{{b.id}}"></td>
+			<td><input name="quantity" type="number" min="0" value="{{b.quantity}}" form="box-update-{{b.id}}" required></td>
+			<td><input name="added_at" type="datetime-local" value="{{(b.added_at or '')[:16]}}" form="box-update-{{b.id}}"></td>
+			<td class="actions">
+				<form id="box-update-{{b.id}}" action="/admin/boxes/{{b.id}}/update" method="post" class="inline">
+					<button type="submit">Update</button>
+				</form>
+				<form action="/admin/boxes/{{b.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this box?')">
+					<button type="submit">Delete</button>
+				</form>
+			</td>
+		</tr>
+		{% endfor %}
+	</table>
+
+	<h2>Create Cell</h2>
+	<form action="/admin/cells/create" method="post" class="row-form">
+		<label>X: <input name="x" type="number" required></label>
+		<label>Y: <input name="y" type="number" required></label>
+		<label>Capacity: <input name="capacity" type="number" min="1" required></label>
+		<button type="submit">Create</button>
+	</form>
+
+	<h2>Cells</h2>
+	<table>
+		<tr><th>ID</th><th>X</th><th>Y</th><th>Capacity</th><th>Actions</th></tr>
+		{% for c in cells %}
+		<tr>
+			<td>{{c.id}}</td>
+			<td><input name="x" type="number" value="{{c.x}}" form="cell-update-{{c.id}}" required></td>
+			<td><input name="y" type="number" value="{{c.y}}" form="cell-update-{{c.id}}" required></td>
+			<td><input name="capacity" type="number" min="1" value="{{c.capacity}}" form="cell-update-{{c.id}}" required></td>
+			<td class="actions">
+				<form id="cell-update-{{c.id}}" action="/admin/cells/{{c.id}}/update" method="post" class="inline">
+					<button type="submit">Update</button>
+				</form>
+				<form action="/admin/cells/{{c.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this cell? It must be empty.')">
+					<button type="submit">Delete</button>
+				</form>
+			</td>
 		</tr>
 		{% endfor %}
 	</table>

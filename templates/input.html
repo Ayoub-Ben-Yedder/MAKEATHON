@@ -1,13 +1,234 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>Store Box</title></head>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Store Box</title>
+	<style>
+		@font-face {
+			font-family: "Aeonik";
+			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Regular.otf') }}") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+		}
+
+		@font-face {
+			font-family: "Aeonik";
+			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Bold.otf') }}") format("opentype");
+			font-weight: 700;
+			font-style: normal;
+		}
+
+		@font-face {
+			font-family: "Monument";
+			src: url("{{ url_for('static', filename='fonts/MonumentExtended-Regular.otf') }}") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+		}
+
+		:root {
+			--bg-dark: #031a4d;
+			--bg-mid: #0b2f7f;
+			--panel: #ffffff;
+			--panel-line: #c9d6ff;
+			--text: #0c1d44;
+			--text-soft: #5d6d97;
+			--accent: #0f4de2;
+			--accent-hover: #0b3eb8;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: "Aeonik", sans-serif;
+			background:
+				radial-gradient(circle at 15% 10%, rgba(95, 156, 255, 0.35), transparent 45%),
+				radial-gradient(circle at 85% 90%, rgba(26, 73, 201, 0.4), transparent 40%),
+				linear-gradient(140deg, var(--bg-dark), var(--bg-mid));
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+		}
+
+		.panel {
+			width: 100%;
+			max-width: 560px;
+			background: var(--panel);
+			border: 1px solid var(--panel-line);
+			border-radius: 18px;
+			box-shadow: 0 16px 40px rgba(0, 22, 88, 0.25);
+			overflow: hidden;
+		}
+
+		.panel-top {
+			background: linear-gradient(95deg, #052675, #0b49d1);
+			color: #fff;
+			padding: 16px 20px;
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.logo {
+			width: 48px;
+			height: 48px;
+			object-fit: contain;
+			background: rgba(255, 255, 255, 0.12);
+			border-radius: 12px;
+			padding: 6px;
+		}
+
+		.title {
+			margin: 0;
+			font-family: "Monument", sans-serif;
+			font-size: 18px;
+			letter-spacing: 0.02em;
+		}
+
+		.subtitle {
+			margin: 4px 0 0;
+			font-size: 13px;
+			opacity: 0.85;
+		}
+
+		.panel-body {
+			padding: 22px 20px 20px;
+		}
+
+		.form-grid {
+			display: grid;
+			gap: 14px;
+		}
+
+		label {
+			display: grid;
+			gap: 6px;
+			font-size: 13px;
+			font-weight: 700;
+			color: var(--text);
+		}
+
+		input {
+			height: 44px;
+			border: 1px solid var(--panel-line);
+			border-radius: 10px;
+			padding: 0 12px;
+			font-size: 15px;
+			font-family: "Aeonik", sans-serif;
+			color: var(--text);
+			outline: none;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		input:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px rgba(15, 77, 226, 0.16);
+		}
+
+		.actions {
+			margin-top: 6px;
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+
+		button {
+			height: 42px;
+			min-width: 130px;
+			border: 0;
+			border-radius: 10px;
+			background: var(--accent);
+			color: #fff;
+			font-size: 14px;
+			font-weight: 700;
+			font-family: "Aeonik", sans-serif;
+			cursor: pointer;
+			transition: background 0.2s ease, transform 0.2s ease;
+		}
+
+		button:hover {
+			background: var(--accent-hover);
+			transform: translateY(-1px);
+		}
+
+		a {
+			color: var(--accent);
+			text-decoration: none;
+			font-size: 14px;
+			font-weight: 700;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+
+		.hint {
+			margin: 4px 0 0;
+			font-size: 12px;
+			color: var(--text-soft);
+		}
+
+		@media (max-width: 640px) {
+			.panel-top {
+				padding: 14px 14px;
+			}
+
+			.panel-body {
+				padding: 16px 14px;
+			}
+
+			.title {
+				font-size: 15px;
+			}
+
+			.logo {
+				width: 42px;
+				height: 42px;
+			}
+
+			button {
+				width: 100%;
+			}
+
+			.actions {
+				flex-direction: column;
+				align-items: stretch;
+			}
+		}
+	</style>
+</head>
 <body>
-	<h1>Store Box</h1>
-	<form method="post" action="/store">
-		<label>Product name: <input name="name" required></label><br>
-		<label>Quantity: <input name="quantity" type="number" required></label><br>
-		<button type="submit">Store</button>
-	</form>
-	<p><a href="/admin">Back</a></p>
+	<main class="panel">
+		<div class="panel-top">
+			<img class="logo" src="{{ url_for('static', filename='imgs/logo.png') }}" alt="Logo">
+			<div>
+				<h1 class="title">Storage HMI Panel</h1>
+				<p class="subtitle">Register incoming boxes into inventory</p>
+			</div>
+		</div>
+
+		<div class="panel-body">
+			<form method="post" action="/store" class="form-grid">
+				<label>
+					Product name
+					<input name="name" required placeholder="e.g. Lettuce Batch A">
+				</label>
+				<label>
+					Quantity
+					<input name="quantity" type="number" min="1" required placeholder="e.g. 12">
+				</label>
+				<p class="hint">The robot will assign a suitable cell automatically.</p>
+				<div class="actions">
+					<button type="submit">Store Box</button>
+					<a href="/admin">Back to Admin</a>
+				</div>
+			</form>
+		</div>
+	</main>
 </body>
 </html>

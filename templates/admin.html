@@ -2,116 +2,349 @@
 <html>
 <head>
 	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Inventory Admin</title>
 	<style>
-		body { font-family: Arial; margin: 20px; }
-		table { border-collapse: collapse; margin-bottom: 20px; width: 100%; }
-		td, th { border: 1px solid #ccc; padding: 6px; text-align: left; }
+		@font-face {
+			font-family: "Aeonik";
+			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Regular.otf') }}") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+		}
+
+		@font-face {
+			font-family: "Aeonik";
+			src: url("{{ url_for('static', filename='fonts/AeonikTRIAL-Bold.otf') }}") format("opentype");
+			font-weight: 700;
+			font-style: normal;
+		}
+
+		@font-face {
+			font-family: "Monument";
+			src: url("{{ url_for('static', filename='fonts/MonumentExtended-Regular.otf') }}") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+		}
+
+		:root {
+			--bg-dark: #031a4d;
+			--bg-mid: #0b2f7f;
+			--panel: #ffffff;
+			--panel-line: #c9d6ff;
+			--table-head: #e8efff;
+			--text: #0c1d44;
+			--text-soft: #5d6d97;
+			--accent: #0f4de2;
+			--accent-hover: #0b3eb8;
+			--danger: #b1264f;
+			--danger-hover: #921f41;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			min-height: 100vh;
+			font-family: "Aeonik", sans-serif;
+			background:
+				radial-gradient(circle at 15% 10%, rgba(95, 156, 255, 0.35), transparent 45%),
+				radial-gradient(circle at 85% 90%, rgba(26, 73, 201, 0.4), transparent 40%),
+				linear-gradient(140deg, var(--bg-dark), var(--bg-mid));
+			padding: 20px;
+			color: var(--text);
+		}
+
+		.panel {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: var(--panel);
+			border: 1px solid var(--panel-line);
+			border-radius: 18px;
+			box-shadow: 0 16px 40px rgba(0, 22, 88, 0.25);
+			overflow: hidden;
+		}
+
+		.panel-top {
+			background: linear-gradient(95deg, #052675, #0b49d1);
+			color: #fff;
+			padding: 16px 20px;
+			display: flex;
+			align-items: center;
+			gap: 14px;
+		}
+
+		.logo {
+			width: 48px;
+			height: 48px;
+			object-fit: contain;
+			background: rgba(255, 255, 255, 0.12);
+			border-radius: 12px;
+			padding: 6px;
+		}
+
+		.title {
+			margin: 0;
+			font-family: "Monument", sans-serif;
+			font-size: 18px;
+			letter-spacing: 0.02em;
+		}
+
+		.subtitle {
+			margin: 4px 0 0;
+			font-size: 13px;
+			opacity: 0.85;
+		}
+
+		.panel-body {
+			padding: 20px;
+		}
+
+		.toolbar {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-bottom: 14px;
+		}
+
+		a {
+			color: var(--accent);
+			text-decoration: none;
+			font-weight: 700;
+		}
+
+		a:hover { text-decoration: underline; }
+
+		.section {
+			border: 1px solid var(--panel-line);
+			border-radius: 14px;
+			padding: 14px;
+			margin-top: 14px;
+			background: #fbfdff;
+		}
+
+		h2 {
+			margin: 0 0 12px;
+			font-size: 17px;
+			font-family: "Monument", sans-serif;
+			font-weight: 400;
+		}
+
+		table {
+			border-collapse: collapse;
+			width: 100%;
+			background: #fff;
+			border-radius: 10px;
+			overflow: hidden;
+			display: block;
+			overflow-x: auto;
+		}
+
+		th,
+		td {
+			border: 1px solid var(--panel-line);
+			padding: 8px;
+			text-align: left;
+			white-space: nowrap;
+		}
+
+		th {
+			background: var(--table-head);
+			font-weight: 700;
+		}
+
 		form.inline { display: inline-block; margin: 0; }
-		.row-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-		input[type="number"], input[type="text"], input[type="datetime-local"] { width: 120px; }
-		h2 { margin-top: 28px; }
-		.actions { white-space: nowrap; }
+
+		.row-form {
+			display: flex;
+			gap: 8px;
+			align-items: end;
+			flex-wrap: wrap;
+		}
+
+		label {
+			display: grid;
+			gap: 6px;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--text);
+		}
+
+		input[type="number"],
+		input[type="text"],
+		input[type="datetime-local"] {
+			height: 38px;
+			min-width: 110px;
+			border: 1px solid var(--panel-line);
+			border-radius: 8px;
+			padding: 0 10px;
+			font-size: 14px;
+			font-family: "Aeonik", sans-serif;
+			color: var(--text);
+			outline: none;
+		}
+
+		input:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px rgba(15, 77, 226, 0.16);
+		}
+
+		button {
+			height: 36px;
+			border: 0;
+			border-radius: 8px;
+			background: var(--accent);
+			color: #fff;
+			font-size: 13px;
+			font-weight: 700;
+			font-family: "Aeonik", sans-serif;
+			padding: 0 12px;
+			cursor: pointer;
+			transition: background 0.2s ease;
+		}
+
+		button:hover { background: var(--accent-hover); }
+
+		button.danger { background: var(--danger); }
+		button.danger:hover { background: var(--danger-hover); }
+
+		.actions {
+			white-space: nowrap;
+			display: flex;
+			gap: 6px;
+		}
+
+		.quick-form {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			align-items: end;
+		}
+
+		@media (max-width: 760px) {
+			body { padding: 12px; }
+			.panel-top { padding: 14px; }
+			.panel-body { padding: 14px; }
+			.title { font-size: 15px; }
+			.logo { width: 42px; height: 42px; }
+		}
 	</style>
 </head>
 <body>
-	<h1>Inventory Admin</h1>
-	<p><a href="/init">Initialize DB / seed cells</a></p>
+	<main class="panel">
+		<div class="panel-top">
+			<img class="logo" src="{{ url_for('static', filename='imgs/logo.png') }}" alt="Logo">
+			<div>
+				<h1 class="title">Inventory HMI Panel</h1>
+				<p class="subtitle">CRUD control for products, boxes, and cells</p>
+			</div>
+		</div>
 
-	<h2>Create Product</h2>
-	<form action="/admin/products/create" method="post" class="row-form">
-		<label>Name: <input name="name" required></label>
-		<label>Weight dry: <input name="weight_dry" type="number" step="0.01"></label>
-		<label>Weight wet: <input name="weight_wet" type="number" step="0.01"></label>
-		<button type="submit">Create</button>
-	</form>
+		<div class="panel-body">
+			<div class="toolbar">
+				<a href="/init">Initialize DB / seed cells</a>
+				<a href="/store">Open Store Form</a>
+			</div>
 
-	<h2>Products</h2>
-	<table>
-		<tr><th>ID</th><th>Name</th><th>Weight Dry</th><th>Weight Wet</th><th>Actions</th></tr>
-		{% for p in products %}
-		<tr>
-			<td>{{p.id}}</td>
-			<td><input name="name" value="{{p.name}}" form="product-update-{{p.id}}" required></td>
-			<td><input name="weight_dry" type="number" step="0.01" value="{{p.weight_dry if p.weight_dry is not none else ''}}" form="product-update-{{p.id}}"></td>
-			<td><input name="weight_wet" type="number" step="0.01" value="{{p.weight_wet if p.weight_wet is not none else ''}}" form="product-update-{{p.id}}"></td>
-			<td class="actions">
-				<form id="product-update-{{p.id}}" action="/admin/products/{{p.id}}/update" method="post" class="inline">
-					<button type="submit">Update</button>
+			<section class="section">
+				<h2>Products</h2>
+				<form action="/admin/products/create" method="post" class="row-form">
+					<label>Name <input name="name" required></label>
+					<label>Weight dry <input name="weight_dry" type="number" step="0.01"></label>
+					<label>Weight wet <input name="weight_wet" type="number" step="0.01"></label>
+					<button type="submit">Create</button>
 				</form>
-				<form action="/admin/products/{{p.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this product and all its boxes?')">
-					<button type="submit">Delete</button>
-				</form>
-			</td>
-		</tr>
-		{% endfor %}
-	</table>
+				<table>
+					<tr><th>ID</th><th>Name</th><th>Weight Dry</th><th>Weight Wet</th><th>Actions</th></tr>
+					{% for p in products %}
+					<tr>
+						<td>{{p.id}}</td>
+						<td><input name="name" value="{{p.name}}" form="product-update-{{p.id}}" required></td>
+						<td><input name="weight_dry" type="number" step="0.01" value="{{p.weight_dry if p.weight_dry is not none else ''}}" form="product-update-{{p.id}}"></td>
+						<td><input name="weight_wet" type="number" step="0.01" value="{{p.weight_wet if p.weight_wet is not none else ''}}" form="product-update-{{p.id}}"></td>
+						<td class="actions">
+							<form id="product-update-{{p.id}}" action="/admin/products/{{p.id}}/update" method="post" class="inline">
+								<button type="submit">Update</button>
+							</form>
+							<form action="/admin/products/{{p.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this product and all its boxes?')">
+								<button type="submit" class="danger">Delete</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</table>
+			</section>
 
-	<h2>Create Box</h2>
-	<form action="/admin/boxes/create" method="post" class="row-form">
-		<label>Product ID: <input name="product_id" type="number" required></label>
-		<label>Cell ID: <input name="cell_id" type="number"></label>
-		<label>Quantity: <input name="quantity" type="number" min="0" required></label>
-		<button type="submit">Create</button>
-	</form>
-
-	<h2>Boxes</h2>
-	<table>
-		<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th><th>Actions</th></tr>
-		{% for b in boxes %}
-		<tr>
-			<td>{{b.id}}</td>
-			<td><input name="product_id" type="number" value="{{b.product_id}}" form="box-update-{{b.id}}" required></td>
-			<td><input name="cell_id" type="number" value="{{b.cell_id if b.cell_id is not none else ''}}" form="box-update-{{b.id}}"></td>
-			<td><input name="quantity" type="number" min="0" value="{{b.quantity}}" form="box-update-{{b.id}}" required></td>
-			<td><input name="added_at" type="datetime-local" value="{{(b.added_at or '')[:16]}}" form="box-update-{{b.id}}"></td>
-			<td class="actions">
-				<form id="box-update-{{b.id}}" action="/admin/boxes/{{b.id}}/update" method="post" class="inline">
-					<button type="submit">Update</button>
+			<section class="section">
+				<h2>Boxes</h2>
+				<form action="/admin/boxes/create" method="post" class="row-form">
+					<label>Product ID <input name="product_id" type="number" required></label>
+					<label>Cell ID <input name="cell_id" type="number"></label>
+					<label>Quantity <input name="quantity" type="number" min="0" required></label>
+					<button type="submit">Create</button>
 				</form>
-				<form action="/admin/boxes/{{b.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this box?')">
-					<button type="submit">Delete</button>
-				</form>
-			</td>
-		</tr>
-		{% endfor %}
-	</table>
+				<table>
+					<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th><th>Actions</th></tr>
+					{% for b in boxes %}
+					<tr>
+						<td>{{b.id}}</td>
+						<td><input name="product_id" type="number" value="{{b.product_id}}" form="box-update-{{b.id}}" required></td>
+						<td><input name="cell_id" type="number" value="{{b.cell_id if b.cell_id is not none else ''}}" form="box-update-{{b.id}}"></td>
+						<td><input name="quantity" type="number" min="0" value="{{b.quantity}}" form="box-update-{{b.id}}" required></td>
+						<td><input name="added_at" type="datetime-local" value="{{(b.added_at or '')[:16]}}" form="box-update-{{b.id}}"></td>
+						<td class="actions">
+							<form id="box-update-{{b.id}}" action="/admin/boxes/{{b.id}}/update" method="post" class="inline">
+								<button type="submit">Update</button>
+							</form>
+							<form action="/admin/boxes/{{b.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this box?')">
+								<button type="submit" class="danger">Delete</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</table>
+			</section>
 
-	<h2>Create Cell</h2>
-	<form action="/admin/cells/create" method="post" class="row-form">
-		<label>X: <input name="x" type="number" required></label>
-		<label>Y: <input name="y" type="number" required></label>
-		<label>Capacity: <input name="capacity" type="number" min="1" required></label>
-		<button type="submit">Create</button>
-	</form>
-
-	<h2>Cells</h2>
-	<table>
-		<tr><th>ID</th><th>X</th><th>Y</th><th>Capacity</th><th>Actions</th></tr>
-		{% for c in cells %}
-		<tr>
-			<td>{{c.id}}</td>
-			<td><input name="x" type="number" value="{{c.x}}" form="cell-update-{{c.id}}" required></td>
-			<td><input name="y" type="number" value="{{c.y}}" form="cell-update-{{c.id}}" required></td>
-			<td><input name="capacity" type="number" min="1" value="{{c.capacity}}" form="cell-update-{{c.id}}" required></td>
-			<td class="actions">
-				<form id="cell-update-{{c.id}}" action="/admin/cells/{{c.id}}/update" method="post" class="inline">
-					<button type="submit">Update</button>
+			<section class="section">
+				<h2>Cells</h2>
+				<form action="/admin/cells/create" method="post" class="row-form">
+					<label>X <input name="x" type="number" required></label>
+					<label>Y <input name="y" type="number" required></label>
+					<label>Capacity <input name="capacity" type="number" min="1" required></label>
+					<button type="submit">Create</button>
 				</form>
-				<form action="/admin/cells/{{c.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this cell? It must be empty.')">
-					<button type="submit">Delete</button>
-				</form>
-			</td>
-		</tr>
-		{% endfor %}
-	</table>
+				<table>
+					<tr><th>ID</th><th>X</th><th>Y</th><th>Capacity</th><th>Actions</th></tr>
+					{% for c in cells %}
+					<tr>
+						<td>{{c.id}}</td>
+						<td><input name="x" type="number" value="{{c.x}}" form="cell-update-{{c.id}}" required></td>
+						<td><input name="y" type="number" value="{{c.y}}" form="cell-update-{{c.id}}" required></td>
+						<td><input name="capacity" type="number" min="1" value="{{c.capacity}}" form="cell-update-{{c.id}}" required></td>
+						<td class="actions">
+							<form id="cell-update-{{c.id}}" action="/admin/cells/{{c.id}}/update" method="post" class="inline">
+								<button type="submit">Update</button>
+							</form>
+							<form action="/admin/cells/{{c.id}}/delete" method="post" class="inline" onsubmit="return confirm('Delete this cell? It must be empty.')">
+								<button type="submit" class="danger">Delete</button>
+							</form>
+						</td>
+					</tr>
+					{% endfor %}
+				</table>
+			</section>
 
-	<h2>Quick Retrieve</h2>
-	<form action="/retrieve/plan" method="post">
-		<label>Product ID: <input name="product_id" required></label>
-		<label>Quantity: <input name="quantity" type="number" required></label>
-		<button type="submit">Plan Retrieval</button>
-	</form>
+			<section class="section">
+				<h2>Quick Retrieve</h2>
+				<form action="/retrieve/plan" method="post" class="quick-form">
+					<label>Product ID <input name="product_id" type="number" required></label>
+					<label>Quantity <input name="quantity" type="number" min="1" required></label>
+					<button type="submit">Plan Retrieval</button>
+				</form>
+			</section>
+		</div>
+	</main>
 
 </body>
 </html>

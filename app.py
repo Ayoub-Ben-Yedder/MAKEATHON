@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from config import SECRET_KEY
 from database import init_db, get_session
-from services import inventory, robot, ai
+from services import inventory, robot, model_ai
 from models.cell import Cell
 from models.box import Box
 from models.product import Product
@@ -58,7 +58,7 @@ def _calculate_estimated_quantity(db, product_id, measured_weight):
 	if not product:
 		return None, None
 
-	unit_weight = product.weight_dry if product.weight_dry is not None else product.weight_wet
+	unit_weight = product.weight_wet if product.weight_wet is not None else product.weight_dry
 	if not unit_weight or unit_weight <= 0:
 		return None, None
 
@@ -339,7 +339,7 @@ def input_capture():
 	with open(absolute_path, 'rb') as f:
 		image_bytes = f.read()
 
-	detection = ai.detect_product_from_image(image_bytes) or {}
+	detection = model_ai.detect_product_from_image(image_bytes) or {}
 	confidence = detection.get('confidence')
 
 	db = get_session()
@@ -378,6 +378,8 @@ def input_capture():
 def input_weight():
 	payload = request.get_json(silent=True) or {}
 	weight_raw = payload.get('weight', request.form.get('weight'))
+	print("we got some!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	print(weight_raw)
 
 	try:
 		weight = float(weight_raw)
@@ -389,6 +391,37 @@ def input_weight():
 
 	with input_state_lock:
 		product_id = latest_input_state['detected_product_id']
+
+	# take image using webcam and persist it so the store page can preview it
+	img_bytes = model_ai.take_image()
+	filename = f"weight_capture_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}.jpg"
+	absolute_path = os.path.join(CAPTURE_DIR, filename)
+	with open(absolute_path, 'wb') as f:
+		f.write(img_bytes)
+
+	# run the img through the ai to detect its name
+	detection = model_ai.detect_product_from_image(img_bytes) or {}
+	product_detected = (detection.get('name') or '').strip()
+
+	with input_state_lock:
+		latest_input_state['image_path'] = f"captures/{filename}"
+		latest_input_state['captured_at'] = datetime.utcnow().isoformat()
+		latest_input_state['ai_confidence'] = detection.get('confidence')
+		latest_input_state['message'] = 'Weight captured and product checked'
+
+	db = get_session()
+	try:
+		product = db.query(Product).filter(Product.name.ilike(product_detected)).first() if product_detected else None
+		product_id = product.id if product else None
+		if product:
+			latest_input_state['detected_product_id'] = product.id
+			latest_input_state['detected_product_name'] = product.name
+		else:
+			latest_input_state['detected_product_id'] = None
+			latest_input_state['detected_product_name'] = None
+	finally:
+		db.close()
+
 
 	db = get_session()
 	try:
@@ -484,5 +517,5 @@ def retrieve_confirm():
 
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run(host="0.0.0.0", port=5000, debug=True)
 

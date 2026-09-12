@@ -1,2 +1,2 @@
 # services package
-from . import inventory, robot, ai
+from . import inventory, robot, model_ai

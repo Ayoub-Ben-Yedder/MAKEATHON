@@ -36,6 +36,8 @@
 			--text-soft: #5d6d97;
 			--accent: #0f4de2;
 			--accent-hover: #0b3eb8;
+			--success: #0d7a4f;
+			--warning: #a46a00;
 		}
 
 		* { box-sizing: border-box; }
@@ -57,7 +59,7 @@
 
 		.panel {
 			width: 100%;
-			max-width: 900px;
+			max-width: 980px;
 			background: var(--panel);
 			border: 1px solid var(--panel-line);
 			border-radius: 18px;
@@ -97,13 +99,44 @@
 		}
 
 		.panel-body {
-			padding: 20px;
+			padding: 22px 20px 20px;
+		}
+
+		.layout {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 1.2fr;
+			gap: 16px;
+		}
+
+		.section {
+			border: 1px solid var(--panel-line);
+			border-radius: 14px;
+			background: #fbfdff;
+			padding: 16px;
+		}
+
+		h2 {
+			margin: 0 0 12px;
+			font-size: 17px;
+			font-family: "Monument", sans-serif;
+			font-weight: 400;
+		}
+
+		p {
+			margin: 0;
+		}
+
+		.helper {
+			color: var(--text-soft);
+			font-size: 13px;
+			line-height: 1.5;
+			margin-top: 6px;
 		}
 
 		.stats {
-			display: flex;
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 10px;
-			flex-wrap: wrap;
 			margin-bottom: 14px;
 		}
 
@@ -112,7 +145,7 @@
 			border: 1px solid var(--panel-line);
 			border-radius: 10px;
 			padding: 10px 12px;
-			min-width: 140px;
+			min-width: 0;
 		}
 
 		.stat-label {
@@ -127,6 +160,91 @@
 			margin: 0;
 			font-size: 22px;
 			font-weight: 700;
+		}
+
+		.retrieval-form {
+			display: grid;
+			gap: 12px;
+		}
+
+		label {
+			display: grid;
+			gap: 6px;
+			font-size: 13px;
+			font-weight: 700;
+			color: var(--text);
+		}
+
+		input {
+			height: 44px;
+			border: 1px solid var(--panel-line);
+			border-radius: 10px;
+			padding: 0 12px;
+			font-size: 15px;
+			font-family: "Aeonik", sans-serif;
+			color: var(--text);
+			outline: none;
+			transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		input:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px rgba(15, 77, 226, 0.16);
+		}
+
+		.notice {
+			border-radius: 12px;
+			padding: 12px 14px;
+			font-size: 13px;
+			line-height: 1.45;
+		}
+
+		.notice.info {
+			background: #eef4ff;
+			color: var(--text);
+			border: 1px solid var(--panel-line);
+		}
+
+		.notice.error {
+			background: #fff5f5;
+			color: #8f1e2f;
+			border: 1px solid #f2b5c0;
+		}
+
+		.notice.warning {
+			background: #fff8eb;
+			color: var(--warning);
+			border: 1px solid #f0d79b;
+		}
+
+		.summary {
+			display: grid;
+			gap: 10px;
+			margin-bottom: 14px;
+		}
+
+		.summary-row {
+			display: flex;
+			justify-content: space-between;
+			gap: 10px;
+			padding: 10px 12px;
+			border: 1px solid var(--panel-line);
+			border-radius: 10px;
+			background: #fff;
+		}
+
+		.summary-label {
+			font-size: 12px;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			color: var(--text-soft);
+		}
+
+		.summary-value {
+			font-size: 14px;
+			font-weight: 700;
+			color: var(--text);
+			text-align: right;
 		}
 
 		table {
@@ -153,7 +271,7 @@
 		}
 
 		.actions {
-			margin-top: 16px;
+			margin-top: 6px;
 			display: flex;
 			gap: 10px;
 			align-items: center;
@@ -161,7 +279,7 @@
 		}
 
 		button {
-			height: 40px;
+			height: 44px;
 			border: 0;
 			border-radius: 10px;
 			background: var(--accent);
@@ -171,10 +289,13 @@
 			font-family: "Aeonik", sans-serif;
 			padding: 0 14px;
 			cursor: pointer;
-			transition: background 0.2s ease;
+			transition: background 0.2s ease, transform 0.2s ease;
 		}
 
-		button:hover { background: var(--accent-hover); }
+		button:hover {
+			background: var(--accent-hover);
+			transform: translateY(-1px);
+		}
 
 		a {
 			color: var(--accent);
@@ -185,14 +306,25 @@
 
 		a:hover { text-decoration: underline; }
 
+		@media (max-width: 860px) {
+			.layout {
+				grid-template-columns: 1fr;
+			}
+
+			.stats {
+				grid-template-columns: 1fr;
+			}
+		}
+
 		@media (max-width: 700px) {
 			body { padding: 12px; }
 			.panel-top { padding: 14px; }
 			.panel-body { padding: 14px; }
 			.title { font-size: 15px; }
 			.logo { width: 42px; height: 42px; }
-			.stat { min-width: 110px; }
 			.stat-value { font-size: 20px; }
+			button { width: 100%; }
+			.actions { flex-direction: column; align-items: stretch; }
 		}
 	</style>
 </head>
@@ -207,39 +339,79 @@
 		</div>
 
 		<div class="panel-body">
-			<div class="stats">
-				<div class="stat">
-					<p class="stat-label">Requested</p>
-					<p class="stat-value">{{plan.requested}}</p>
-				</div>
-				<div class="stat">
-					<p class="stat-label">Fulfilled</p>
-					<p class="stat-value">{{plan.fulfilled}}</p>
-				</div>
-				<div class="stat">
-					<p class="stat-label">Remaining</p>
-					<p class="stat-value">{{plan.remaining}}</p>
-				</div>
-			</div>
+			<div class="layout">
+				<section class="section">
+					<h2>Retrieve Products</h2>
+					<p class="helper">Choose a product and quantity, then generate the FIFO plan for the operator to execute.</p>
+					{% if error_message %}
+					<div class="notice error" style="margin-top: 12px;">{{ error_message }}</div>
+					{% elif not plan %}
+					<div class="notice info" style="margin-top: 12px;">No plan loaded yet. Submit the form to build a retrieval list.</div>
+					{% endif %}
 
-			<form method="post" action="/retrieve/confirm">
-				<input type="hidden" name="plan" value='{{ plan.plan | tojson }}'>
-				<table>
-					<tr><th>Box ID</th><th>Cell</th><th>Available</th><th>Take</th></tr>
-					{% for item in plan.plan %}
-					<tr>
-						<td>{{item.box_id}}</td>
-						<td>{{item.cell_id}}</td>
-						<td>{{item.available}}</td>
-						<td>{{item.take}}</td>
-					</tr>
-					{% endfor %}
-				</table>
-				<div class="actions">
-					<button type="submit">Confirm Retrieval</button>
-					<a href="/admin">Back to Admin</a>
-				</div>
-			</form>
+					<form method="post" action="/retrieve/plan" class="retrieval-form" style="margin-top: 14px;">
+						<label>
+							Product ID
+							<input name="product_id" type="number" min="1" required value="{{ product_id or '' }}" placeholder="e.g. 1">
+						</label>
+						<label>
+							Quantity
+							<input name="quantity" type="number" min="1" required value="{{ quantity or '' }}" placeholder="e.g. 12">
+						</label>
+						<div class="actions">
+							<button type="submit">Generate Retrieval Plan</button>
+							<a href="/admin">Back to Admin</a>
+						</div>
+					</form>
+				</section>
+
+				<section class="section">
+					<h2>Plan Preview</h2>
+					{% if confirmation_message %}
+					<div class="notice info" style="margin-bottom: 12px; background: #eaf8f1; color: var(--success); border-color: #bfe8d1;">{{ confirmation_message }}</div>
+					{% endif %}
+					{% if plan %}
+					<div class="stats">
+						<div class="stat">
+							<p class="stat-label">Requested</p>
+							<p class="stat-value">{{ plan.requested }}</p>
+						</div>
+						<div class="stat">
+							<p class="stat-label">Fulfilled</p>
+							<p class="stat-value">{{ plan.fulfilled }}</p>
+						</div>
+						<div class="stat">
+							<p class="stat-label">Remaining</p>
+							<p class="stat-value">{{ plan.remaining }}</p>
+						</div>
+					</div>
+
+					{% if plan.plan %}
+					<form method="post" action="/retrieve/confirm">
+						<input type="hidden" name="plan" value='{{ plan.plan | tojson }}'>
+						<table>
+							<tr><th>Box ID</th><th>Cell</th><th>Available</th><th>Take</th></tr>
+							{% for item in plan.plan %}
+							<tr>
+								<td>{{ item.box_id }}</td>
+								<td>{{ item.cell_id }}</td>
+								<td>{{ item.available }}</td>
+								<td>{{ item.take }}</td>
+							</tr>
+							{% endfor %}
+						</table>
+						<div class="actions">
+							<button type="submit">Confirm Retrieval</button>
+						</div>
+					</form>
+					{% else %}
+					<div class="notice warning">No boxes are available yet for this request.</div>
+					{% endif %}
+					{% else %}
+					<div class="notice info">The retrieval summary will appear here after generating a plan.</div>
+					{% endif %}
+				</section>
+			</div>
 		</div>
 	</main>
 </body>

@@ -412,12 +412,30 @@ def input_status():
 	return jsonify({"ok": True, "state": state})
 
 
-@app.route('/retrieve/plan', methods=['POST'])
+@app.route('/retrieve/plan', methods=['GET', 'POST'])
 def retrieve_plan():
-	product_id = int(request.form.get('product_id'))
-	qty = int(request.form.get('quantity'))
-	plan = inventory.fifo_plan(product_id, qty)
-	return render_template('output.html', plan=plan)
+	plan = None
+	error_message = None
+	product_id_raw = (request.values.get('product_id') or '').strip()
+	qty_raw = (request.values.get('quantity') or '').strip()
+
+	if request.method == 'POST':
+		try:
+			product_id = int(product_id_raw)
+			qty = int(qty_raw)
+			if qty < 1:
+				raise ValueError
+			plan = inventory.fifo_plan(product_id, qty)
+		except (TypeError, ValueError):
+			error_message = 'Please choose a valid product and quantity.'
+
+	return render_template(
+		'output.html',
+		plan=plan,
+		product_id=product_id_raw,
+		quantity=qty_raw,
+		error_message=error_message
+	)
 
 
 @app.route('/retrieve/confirm', methods=['POST'])
@@ -437,7 +455,20 @@ def retrieve_confirm():
 		if cell:
 			robot.retrieve_box(item['box_id'], cell.x, cell.y, item['take'])
 	inventory.apply_retrieval_plan(plan)
-	return redirect(url_for('admin'))
+	executed_total = sum(item.get('take', 0) for item in plan)
+	plan_summary = {
+		'requested': executed_total,
+		'fulfilled': executed_total,
+		'remaining': 0,
+		'plan': plan,
+	}
+	return render_template(
+		'output.html',
+		plan=plan_summary,
+		product_id=request.form.get('product_id', ''),
+		quantity=request.form.get('quantity', ''),
+		confirmation_message='Retrieval confirmed successfully.'
+	)
 
 
 if __name__ == '__main__':

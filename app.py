@@ -6,9 +6,64 @@ from models.cell import Cell
 from models.box import Box
 from models.product import Product
 from datetime import datetime
+import os
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
+
+CAPTURE_DIR = os.path.join(app.root_path, 'static', 'captures')
+os.makedirs(CAPTURE_DIR, exist_ok=True)
+
+input_state_lock = threading.Lock()
+latest_input_state = {
+	"image_path": None,
+	"captured_at": None,
+	"detected_product_id": None,
+	"detected_product_name": None,
+	"ai_confidence": None,
+	"last_weight": None,
+	"estimated_quantity": None,
+	"unit_weight": None,
+	"message": "Waiting for camera capture"
+}
+
+
+def _resolve_product_from_detection(db, detection):
+	product_id = detection.get('product_id')
+	name = (detection.get('name') or '').strip()
+	product = None
+
+	if product_id:
+		product = db.query(Product).get(int(product_id))
+
+	if not product and name:
+		product = db.query(Product).filter(Product.name.ilike(name)).first()
+
+	if not product and name:
+		# Keep flow continuous for demos: create a product when AI predicts a new name.
+		product = Product(name=name)
+		db.add(product)
+		db.commit()
+		db.refresh(product)
+
+	return product
+
+
+def _calculate_estimated_quantity(db, product_id, measured_weight):
+	if not product_id or measured_weight is None:
+		return None, None
+
+	product = db.query(Product).get(int(product_id))
+	if not product:
+		return None, None
+
+	unit_weight = product.weight_dry if product.weight_dry is not None else product.weight_wet
+	if not unit_weight or unit_weight <= 0:
+		return None, None
+
+	estimated_qty = max(0, int(measured_weight / unit_weight))
+	return estimated_qty, unit_weight
 
 
 @app.route('/')
@@ -213,10 +268,26 @@ def admin_cells_delete(cell_id):
 def store():
 	if request.method == 'GET':
 		return render_template('input.html')
-	# POST: receive product name and quantity
-	name = request.form.get('name')
+	# POST: receive product id or product name and quantity
+	product_id_raw = (request.form.get('product_id') or '').strip()
+	name = (request.form.get('name') or '').strip()
 	qty = int(request.form.get('quantity') or 0)
-	product = inventory.create_product(name)
+	if qty < 1:
+		return redirect(url_for('store'))
+
+	product = None
+	db = get_session()
+	try:
+		if product_id_raw:
+			product = db.query(Product).get(int(product_id_raw))
+	finally:
+		db.close()
+
+	if not product:
+		if not name:
+			return redirect(url_for('store'))
+		product = inventory.create_product(name)
+
 	box = inventory.create_box(product.id, qty)
 	# simulate robot store
 	cell_id = box.cell_id
@@ -231,7 +302,114 @@ def store():
 		ok = robot.store_box(box.id, cell.x, cell.y)
 		if ok:
 			inventory.confirm_storage(box.id)
+
+	with input_state_lock:
+		latest_input_state['message'] = 'Box stored successfully'
+		latest_input_state['detected_product_id'] = product.id
+		latest_input_state['detected_product_name'] = product.name
 	return redirect(url_for('admin'))
+
+
+@app.route('/api/input/capture', methods=['POST'])
+def input_capture():
+	uploaded = request.files.get('image')
+	if not uploaded:
+		return jsonify({"ok": False, "error": "Missing image file in field 'image'"}), 400
+
+	ext = os.path.splitext(uploaded.filename or '')[1].lower() or '.jpg'
+	if ext not in ['.jpg', '.jpeg', '.png', '.webp']:
+		ext = '.jpg'
+
+	ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')
+	filename = f"capture_{ts}{ext}"
+	absolute_path = os.path.join(CAPTURE_DIR, filename)
+	uploaded.save(absolute_path)
+
+	with open(absolute_path, 'rb') as f:
+		image_bytes = f.read()
+
+	detection = ai.detect_product_from_image(image_bytes) or {}
+	confidence = detection.get('confidence')
+
+	db = get_session()
+	try:
+		product = _resolve_product_from_detection(db, detection)
+		weight = None
+		with input_state_lock:
+			weight = latest_input_state['last_weight']
+		estimated_qty, unit_weight = _calculate_estimated_quantity(db, product.id if product else None, weight)
+	finally:
+		db.close()
+
+	with input_state_lock:
+		latest_input_state['image_path'] = f"captures/{filename}"
+		latest_input_state['captured_at'] = datetime.utcnow().isoformat()
+		latest_input_state['detected_product_id'] = product.id if product else None
+		latest_input_state['detected_product_name'] = product.name if product else None
+		latest_input_state['ai_confidence'] = confidence
+		latest_input_state['estimated_quantity'] = estimated_qty
+		latest_input_state['unit_weight'] = unit_weight
+		latest_input_state['message'] = 'Image captured and product detected' if product else 'Image captured, product not found'
+
+	return jsonify({
+		"ok": True,
+		"detected_product_id": product.id if product else None,
+		"detected_product_name": product.name if product else None,
+		"confidence": confidence,
+		"saved_image": f"/static/captures/{filename}",
+		"estimated_quantity": estimated_qty,
+		"unit_weight": unit_weight
+	})
+
+
+@app.route('/api/input/weight', methods=['POST'])
+def input_weight():
+	payload = request.get_json(silent=True) or {}
+	weight_raw = payload.get('weight', request.form.get('weight'))
+
+	try:
+		weight = float(weight_raw)
+	except (TypeError, ValueError):
+		return jsonify({"ok": False, "error": "Invalid or missing weight"}), 400
+
+	if weight < 0:
+		return jsonify({"ok": False, "error": "Weight must be >= 0"}), 400
+
+	with input_state_lock:
+		product_id = latest_input_state['detected_product_id']
+
+	db = get_session()
+	try:
+		estimated_qty, unit_weight = _calculate_estimated_quantity(db, product_id, weight)
+	finally:
+		db.close()
+
+	with input_state_lock:
+		latest_input_state['last_weight'] = weight
+		latest_input_state['estimated_quantity'] = estimated_qty
+		latest_input_state['unit_weight'] = unit_weight
+		latest_input_state['message'] = 'Weight received and estimate updated'
+
+	return jsonify({
+		"ok": True,
+		"weight": weight,
+		"detected_product_id": product_id,
+		"estimated_quantity": estimated_qty,
+		"unit_weight": unit_weight
+	})
+
+
+@app.route('/api/input/status', methods=['GET'])
+def input_status():
+	with input_state_lock:
+		state = dict(latest_input_state)
+
+	if state.get('image_path'):
+		state['image_url'] = url_for('static', filename=state['image_path'])
+	else:
+		state['image_url'] = None
+
+	return jsonify({"ok": True, "state": state})
 
 
 @app.route('/retrieve/plan', methods=['POST'])

@@ -105,6 +105,58 @@
 			gap: 14px;
 		}
 
+		.live-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+			margin-bottom: 14px;
+		}
+
+		.stat {
+			background: #f4f8ff;
+			border: 1px solid var(--panel-line);
+			border-radius: 10px;
+			padding: 10px;
+		}
+
+		.stat-label {
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			color: var(--text-soft);
+			margin: 0 0 4px;
+		}
+
+		.stat-value {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--text);
+		}
+
+		.preview {
+			margin-bottom: 14px;
+			height: 170px;
+			border-radius: 12px;
+			border: 1px solid var(--panel-line);
+			background: #f8fbff;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+		}
+
+		.preview img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.preview span {
+			font-size: 13px;
+			color: var(--text-soft);
+		}
+
 		label {
 			display: grid;
 			gap: 6px;
@@ -191,6 +243,10 @@
 				height: 42px;
 			}
 
+			.live-grid {
+				grid-template-columns: 1fr;
+			}
+
 			button {
 				width: 100%;
 			}
@@ -213,16 +269,40 @@
 		</div>
 
 		<div class="panel-body">
+			<div class="preview" id="capturePreview">
+				<span>No camera capture yet</span>
+			</div>
+
+			<div class="live-grid">
+				<div class="stat">
+					<p class="stat-label">Detected product ID</p>
+					<p class="stat-value" id="detectedId">-</p>
+				</div>
+				<div class="stat">
+					<p class="stat-label">Detected product name</p>
+					<p class="stat-value" id="detectedName">-</p>
+				</div>
+				<div class="stat">
+					<p class="stat-label">Latest weight</p>
+					<p class="stat-value" id="latestWeight">-</p>
+				</div>
+				<div class="stat">
+					<p class="stat-label">Estimated quantity</p>
+					<p class="stat-value" id="estimatedQty">-</p>
+				</div>
+			</div>
+
 			<form method="post" action="/store" class="form-grid">
+				<input id="productIdInput" name="product_id" type="hidden">
 				<label>
 					Product name
-					<input name="name" required placeholder="e.g. Lettuce Batch A">
+					<input id="productNameInput" name="name" required placeholder="e.g. Lettuce Batch A">
 				</label>
 				<label>
 					Quantity
-					<input name="quantity" type="number" min="1" required placeholder="e.g. 12">
+					<input id="quantityInput" name="quantity" type="number" min="1" required placeholder="e.g. 12">
 				</label>
-				<p class="hint">The robot will assign a suitable cell automatically.</p>
+				<p class="hint" id="statusMessage">The robot will assign a suitable cell automatically.</p>
 				<div class="actions">
 					<button type="submit">Store Box</button>
 					<a href="/admin">Back to Admin</a>
@@ -230,5 +310,64 @@
 			</form>
 		</div>
 	</main>
+	<script>
+		const stateEls = {
+			detectedId: document.getElementById('detectedId'),
+			detectedName: document.getElementById('detectedName'),
+			latestWeight: document.getElementById('latestWeight'),
+			estimatedQty: document.getElementById('estimatedQty'),
+			statusMessage: document.getElementById('statusMessage'),
+			productIdInput: document.getElementById('productIdInput'),
+			productNameInput: document.getElementById('productNameInput'),
+			quantityInput: document.getElementById('quantityInput'),
+			capturePreview: document.getElementById('capturePreview')
+		};
+
+		function setText(el, value) {
+			el.textContent = value === null || value === undefined || value === '' ? '-' : String(value);
+		}
+
+		function renderState(state) {
+			setText(stateEls.detectedId, state.detected_product_id);
+			setText(stateEls.detectedName, state.detected_product_name);
+			setText(stateEls.latestWeight, state.last_weight !== null ? `${state.last_weight} g` : null);
+			setText(stateEls.estimatedQty, state.estimated_quantity);
+			stateEls.statusMessage.textContent = state.message || 'Waiting for device input';
+
+			if (state.detected_product_id) {
+				stateEls.productIdInput.value = state.detected_product_id;
+			}
+
+			if (state.detected_product_name && !stateEls.productNameInput.value) {
+				stateEls.productNameInput.value = state.detected_product_name;
+			}
+
+			if (state.estimated_quantity && Number(state.estimated_quantity) > 0) {
+				stateEls.quantityInput.value = state.estimated_quantity;
+			}
+
+			if (state.image_url) {
+				stateEls.capturePreview.innerHTML = `<img src="${state.image_url}?t=${Date.now()}" alt="Latest capture">`;
+			}
+		}
+
+		async function refreshStatus() {
+			try {
+				const res = await fetch('/api/input/status');
+				if (!res.ok) {
+					return;
+				}
+				const data = await res.json();
+				if (data.ok && data.state) {
+					renderState(data.state);
+				}
+			} catch (e) {
+				// Ignore transient polling errors.
+			}
+		}
+
+		refreshStatus();
+		setInterval(refreshStatus, 2000);
+	</script>
 </body>
 </html>

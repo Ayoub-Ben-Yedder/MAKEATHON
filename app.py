@@ -268,7 +268,7 @@ def admin_cells_delete(cell_id):
 def store():
 	if request.method == 'GET':
 		return render_template('input.html')
-	# POST: receive product id or product name and quantity
+	# POST: receive either a product id or product name and a quantity
 	product_id_raw = (request.form.get('product_id') or '').strip()
 	name = (request.form.get('name') or '').strip()
 	qty = int(request.form.get('quantity') or 0)
@@ -276,10 +276,19 @@ def store():
 		return redirect(url_for('store'))
 
 	product = None
+	product_id = None
 	db = get_session()
 	try:
 		if product_id_raw:
-			product = db.query(Product).get(int(product_id_raw))
+			try:
+				product_id = int(product_id_raw)
+			except (TypeError, ValueError):
+				product_id = None
+			if product_id is not None:
+				product = db.query(Product).get(product_id)
+
+		if not product and name:
+			product = db.query(Product).filter(Product.name.ilike(name)).first()
 	finally:
 		db.close()
 

@@ -89,15 +89,6 @@
 			setText(stateEls.estimatedQty, state.estimated_quantity);
 			stateEls.statusMessage.textContent = state.message || 'Waiting for device input';
 
-			if (state.detected_product_id) {
-				// Only autofill the product id when the input isn't focused
-				if (document.activeElement !== stateEls.productIdInput) {
-					if (!stateEls.productIdInput.value || stateEls.productIdInput.value !== String(state.detected_product_id)) {
-						stateEls.productIdInput.value = state.detected_product_id;
-					}
-				}
-			}
-
 			if (state.detected_product_name && !stateEls.productNameInput.value) {
 				// Don't overwrite when user is editing the product name
 				if (document.activeElement !== stateEls.productNameInput) {

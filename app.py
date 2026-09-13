@@ -378,19 +378,22 @@ def input_capture():
 def input_weight():
 	payload = request.get_json(silent=True) or {}
 	weight_raw = payload.get('weight', request.form.get('weight'))
-	print("we got some!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	print(weight_raw)
+	print(f"[input_weight] payload={payload}")
+	print(f"[input_weight] raw weight={weight_raw}")
 
 	try:
 		weight = float(weight_raw)
 	except (TypeError, ValueError):
+		print("[input_weight] invalid or missing weight")
 		return jsonify({"ok": False, "error": "Invalid or missing weight"}), 400
 
 	if weight < 0:
+		print(f"[input_weight] rejected negative weight={weight}")
 		return jsonify({"ok": False, "error": "Weight must be >= 0"}), 400
 
 	with input_state_lock:
 		product_id = latest_input_state['detected_product_id']
+	print(f"[input_weight] starting with latest detected_product_id={product_id}")
 
 	# take image using webcam and persist it so the store page can preview it
 	img_bytes = model_ai.take_image()
@@ -402,6 +405,7 @@ def input_weight():
 	# run the img through the ai to detect its name
 	detection = model_ai.detect_product_from_image(img_bytes) or {}
 	product_detected = (detection.get('name') or '').strip()
+	print(f"[input_weight] detected product from image={product_detected!r}, detection={detection}")
 
 	with input_state_lock:
 		latest_input_state['image_path'] = f"captures/{filename}"
@@ -412,6 +416,7 @@ def input_weight():
 	try:
 		product = db.query(Product).filter(Product.name.ilike(product_detected)).first() if product_detected else None
 		product_id = product.id if product else None
+		print(f"[input_weight] db product match={getattr(product, 'name', None)!r}, product_id={product_id}")
 		if product:
 			latest_input_state['detected_product_id'] = product.id
 			latest_input_state['detected_product_name'] = product.name
@@ -427,6 +432,7 @@ def input_weight():
 		estimated_qty, unit_weight = _calculate_estimated_quantity(db, product_id, weight)
 	finally:
 		db.close()
+	print(f"[input_weight] estimate updated estimated_qty={estimated_qty}, unit_weight={unit_weight}")
 
 	with input_state_lock:
 		latest_input_state['last_weight'] = weight

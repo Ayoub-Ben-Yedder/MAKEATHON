@@ -1,9 +1,9 @@
 import requests
 
 url = "http://10.97.193.192:5000/api/weight"
-
+#url = "http://10.97.193.40:8765/pick"
 data = {
-    "weight": 100.02,
+    "product": 100.02,
     "unit": "g"
 }
 

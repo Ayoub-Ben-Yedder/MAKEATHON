@@ -42,18 +42,14 @@
 
 			<form method="post" action="/store" class="form-grid">
 				<label>
-					Product id
-					<input id="productIdInput" name="product_id" placeholder="e.g 1" >
-				</label>
-				<label>
 					Product name
-					<input id="productNameInput" name="name" placeholder="e.g Product A">
+					<input id="productNameInput" name="name" placeholder="e.g Product A" required>
 				</label>
 				<label>
 					Quantity
 					<input id="quantityInput" name="quantity" type="number" min="1" required placeholder="e.g. 12">
 				</label>
-				<p class="hint" id="statusMessage">Provide either the product ID or product name to continue. The robot will assign a suitable cell automatically.</p>
+				<p class="hint" id="statusMessage">Provide the product name to continue. The robot will assign a suitable cell automatically.</p>
 				<div class="actions">
 					<button type="submit">Store Box</button>
 				</div>
@@ -67,23 +63,14 @@
 			latestWeight: document.getElementById('latestWeight'),
 			estimatedQty: document.getElementById('estimatedQty'),
 			statusMessage: document.getElementById('statusMessage'),
-			productIdInput: document.getElementById('productIdInput'),
 			productNameInput: document.getElementById('productNameInput'),
 			quantityInput: document.getElementById('quantityInput'),
 			capturePreview: document.getElementById('capturePreview')
 		};
 
 		// Track recent manual edits to avoid overwriting user input
-		let productIdEdited = false;
-		let productIdEditedTimer = null;
 		let quantityEdited = false;
 		let quantityEditedTimer = null;
-
-		stateEls.productIdInput.addEventListener('input', () => {
-			productIdEdited = true;
-			if (productIdEditedTimer) clearTimeout(productIdEditedTimer);
-			productIdEditedTimer = setTimeout(() => { productIdEdited = false; productIdEditedTimer = null; }, 30000);
-		});
 
 		stateEls.quantityInput.addEventListener('input', () => {
 			quantityEdited = true;

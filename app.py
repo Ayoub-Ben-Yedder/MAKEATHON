@@ -460,22 +460,38 @@ def input_status():
 def retrieve_plan():
 	plan = None
 	error_message = None
+	product_name_raw = (request.values.get('product_name') or '').strip()
 	product_id_raw = (request.values.get('product_id') or '').strip()
 	qty_raw = (request.values.get('quantity') or '').strip()
 
 	if request.method == 'POST':
+		db = get_session()
 		try:
-			product_id = int(product_id_raw)
-			qty = int(qty_raw)
-			if qty < 1:
-				raise ValueError
-			plan = inventory.fifo_plan(product_id, qty)
-		except (TypeError, ValueError):
-			error_message = 'Please choose a valid product and quantity.'
+			product = None
+			if product_name_raw:
+				product = db.query(Product).filter(Product.name.ilike(product_name_raw)).first()
+			elif product_id_raw:
+				try:
+					product = db.query(Product).get(int(product_id_raw))
+				except (TypeError, ValueError):
+					product = None
+
+			try:
+				qty = int(qty_raw)
+				if qty < 1:
+					raise ValueError
+				if not product:
+					raise ValueError
+				plan = inventory.fifo_plan(product.id, qty)
+			except (TypeError, ValueError):
+				error_message = 'Please provide a valid product name and quantity.'
+		finally:
+			db.close()
 
 	return render_template(
 		'output.html',
 		plan=plan,
+		product_name=product_name_raw,
 		product_id=product_id_raw,
 		quantity=qty_raw,
 		error_message=error_message
@@ -511,6 +527,7 @@ def retrieve_confirm():
 	return render_template(
 		'output.html',
 		plan=plan_summary,
+		product_name=request.form.get('product_name', ''),
 		product_id=request.form.get('product_id', ''),
 		quantity=request.form.get('quantity', ''),
 		confirmation_message='Retrieval confirmed successfully.'

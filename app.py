@@ -310,7 +310,7 @@ def store():
 		finally:
 			db.close()
 	if cell:
-		ok = robot.store_box(box.id, cell.x, cell.y)
+		ok = robot.store_box(product.id, cell.x, cell.y)
 		if ok:
 			inventory.confirm_storage(box.id)
 
@@ -406,7 +406,6 @@ def input_weight():
 	with input_state_lock:
 		latest_input_state['image_path'] = f"captures/{filename}"
 		latest_input_state['captured_at'] = datetime.utcnow().isoformat()
-		latest_input_state['ai_confidence'] = detection.get('confidence')
 		latest_input_state['message'] = 'Weight captured and product checked'
 
 	db = get_session()
@@ -495,10 +494,12 @@ def retrieve_confirm():
 		db = get_session()
 		try:
 			cell = db.query(Cell).get(item['cell_id'])
+			box = db.query(Box).filter_by(cell_id=cell.id).first() if cell else None
+			product = db.query(Product).get(box.product_id) if box else None
 		finally:
 			db.close()
 		if cell:
-			robot.retrieve_box(item['box_id'], cell.x, cell.y, item['take'])
+			robot.retrieve_box(product.id, cell.x, cell.y)
 	inventory.apply_retrieval_plan(plan)
 	executed_total = sum(item.get('take', 0) for item in plan)
 	plan_summary = {

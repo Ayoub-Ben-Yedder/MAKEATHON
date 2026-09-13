@@ -26,12 +26,29 @@ def list_products():
 	finally:
 		db.close()
 
-def find_suitable_cell(db):
-	# simplistic: pick first cell with room (boxes count < capacity)
+def cell_can_store_product(db, cell_id, product_id, exclude_box_id=None):
+	if cell_id is None:
+		return True
+
+	cell = db.query(Cell).get(cell_id)
+	if not cell:
+		return False
+
+	boxes_q = db.query(Box).filter(Box.cell_id == cell_id)
+	if exclude_box_id is not None:
+		boxes_q = boxes_q.filter(Box.id != exclude_box_id)
+
+	box_count = boxes_q.count()
+	if box_count >= cell.capacity:
+		return False
+
+	different_product_count = boxes_q.filter(Box.product_id != product_id).count()
+	return different_product_count == 0
+
+def find_suitable_cell(db, product_id):
 	cells = db.query(Cell).order_by(Cell.id).all()
 	for cell in cells:
-		cnt = db.query(Box).filter_by(cell_id=cell.id).count()
-		if cnt < cell.capacity:
+		if cell_can_store_product(db, cell.id, product_id):
 			return cell
 	return None
 
@@ -40,7 +57,7 @@ def create_box(product_id, quantity, assign_cell=True):
 	try:
 		box = Box(product_id=product_id, quantity=quantity)
 		if assign_cell:
-			cell = find_suitable_cell(db)
+			cell = find_suitable_cell(db, product_id)
 			if cell:
 				box.cell_id = cell.id
 		db.add(box)

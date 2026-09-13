@@ -174,6 +174,8 @@ def admin_boxes_create():
 
 	db = get_session()
 	try:
+		if cell_id is not None and not inventory.cell_can_store_product(db, cell_id, product_id):
+			cell_id = None
 		box = Box(product_id=product_id, cell_id=cell_id, quantity=quantity, added_at=datetime.utcnow())
 		db.add(box)
 		db.commit()
@@ -193,9 +195,12 @@ def admin_boxes_update(box_id):
 	try:
 		box = db.query(Box).get(box_id)
 		if box:
-			if product_id_raw:
-				box.product_id = int(product_id_raw)
-			box.cell_id = int(cell_id_raw) if cell_id_raw else None
+			new_product_id = int(product_id_raw) if product_id_raw else box.product_id
+			new_cell_id = int(cell_id_raw) if cell_id_raw else None
+			if new_cell_id is not None and not inventory.cell_can_store_product(db, new_cell_id, new_product_id, exclude_box_id=box.id):
+				new_cell_id = None
+			box.product_id = new_product_id
+			box.cell_id = new_cell_id
 			box.quantity = max(0, int(quantity_raw or 0))
 			box.added_at = datetime.fromisoformat(added_at_raw) if added_at_raw else None
 			db.commit()

@@ -8,7 +8,7 @@ model = YOLO("best.pt")
 
 
 def take_image():
-	cap = cv2.VideoCapture(1)
+	cap = cv2.VideoCapture(0)
 	if not cap.isOpened():
 		raise RuntimeError("Could not open webcam.")
 

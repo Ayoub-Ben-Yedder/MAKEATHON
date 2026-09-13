@@ -487,13 +487,51 @@ def retrieve_plan():
 				except (TypeError, ValueError):
 					product = None
 
+			if not product:
+				error_message = 'Please provide a valid product name.'
+				return render_template(
+					'output.html',
+					plan=plan,
+					product_name=product_name_raw,
+					product_id=product_id_raw,
+					quantity=qty_raw,
+					error_message=error_message
+				)
+
 			try:
 				qty = int(qty_raw)
 				if qty < 1:
 					raise ValueError
-				if not product:
-					raise ValueError
 				plan = inventory.fifo_plan(product.id, qty)
+				if not plan.get('plan'):
+					error_message = 'No retrievable boxes are available yet for this product.'
+					return render_template(
+						'output.html',
+						plan=plan,
+						product_name=product_name_raw,
+						product_id=product_id_raw,
+						quantity=qty_raw,
+						error_message=error_message
+					)
+				first_item = plan['plan'][0]
+				if first_item['available'] - first_item['take'] > 0:
+					coming_back = "coming_back"
+				else:
+					coming_back = "out"
+				cell = db.query(Cell).get(first_item['cell_id'])
+				if not cell:
+					error_message = 'The selected box is not assigned to a valid cell.'
+					return render_template(
+						'output.html',
+						plan=plan,
+						product_name=product_name_raw,
+						product_id=product_id_raw,
+						quantity=qty_raw,
+						error_message=error_message
+					)
+				x = cell.x
+				y = cell.y
+				robot.output_box(coming_back, x, y)
 			except (TypeError, ValueError):
 				error_message = 'Please provide a valid product name and quantity.'
 		finally:

@@ -42,3 +42,20 @@ def retrieve_box(product_id, x, y):
 	except requests.RequestException as e:
 		print(f"Request error when sending to Blender: {e}")
 	return True
+
+def output_box(coming_back, x, y):
+	print("Sending to Blender : ", coming_back, x, y)
+	data = {
+		"product": coming_back,
+		"x": x,
+		"y": y
+	}
+	try:
+		response = requests.post(url, json=data)
+		if response.ok:
+			print("Sent Successfully")
+		else:
+			print(f"Failed to send to Blender: status={response.status_code}, body={response.text}")
+	except requests.RequestException as e:
+		print(f"Request error when sending to Blender: {e}")
+	return True

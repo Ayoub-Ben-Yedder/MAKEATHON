@@ -8,7 +8,7 @@ model = YOLO("best.pt")
 
 
 def take_image():
-	cap = cv2.VideoCapture(0)
+	cap = cv2.VideoCapture(1)
 	if not cap.isOpened():
 		raise RuntimeError("Could not open webcam.")
 
@@ -49,6 +49,8 @@ def detect_product_from_image(image_bytes=None):
 	print("Count A:", count_a)
 	print("Count B:", count_b)
 
+	if count_a == 0 and count_b == 0:
+		return {"name": "XX"}
 	if count_a > count_b:
 		return {"name": "A"}
 	else:

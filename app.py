@@ -340,7 +340,7 @@ def input_capture():
 		image_bytes = f.read()
 
 	detection = model_ai.detect_product_from_image(image_bytes) or {}
-	confidence = detection.get('confidence')
+	#confidence = detection.get('confidence')
 
 	db = get_session()
 	try:

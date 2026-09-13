@@ -40,15 +40,28 @@
 				</div>
 			</div>
 
-			<form method="post" action="/store" class="form-grid">
-				<label>
-					Product name
-					<input id="productNameInput" name="name" placeholder="e.g Product A" required>
+			<form method="post" action="/store" class="form-grid" id="storeForm">
+				<label class="toggle-row">
+					<input type="checkbox" id="modifyDetectedValues">
+					Modify detected values
 				</label>
-				<label>
-					Quantity
-					<input id="quantityInput" name="quantity" type="number" min="1" required placeholder="e.g. 12">
-				</label>
+
+				<input type="hidden" id="detectedProductIdInput" name="product_id">
+				<input type="hidden" id="detectedProductNameInput" name="name">
+				<input type="hidden" id="detectedQuantityInput" name="quantity">
+
+				<div id="manualFields" hidden>
+					<label>
+						Product name
+						<input id="productNameInput" placeholder="e.g Product A" required>
+					</label>
+					<label>
+						Quantity
+						<input id="quantityInput" type="number" min="1" required placeholder="e.g. 12">
+					</label>
+				</div>
+
+				<p class="hint" id="detectedSummary">Detected values will be used automatically.</p>
 				<p class="hint" id="statusMessage">Provide the product name to continue. The robot will assign a suitable cell automatically.</p>
 				<div class="actions">
 					<button type="submit">Store Box</button>
@@ -62,47 +75,111 @@
 			detectedName: document.getElementById('detectedName'),
 			latestWeight: document.getElementById('latestWeight'),
 			estimatedQty: document.getElementById('estimatedQty'),
+			detectedSummary: document.getElementById('detectedSummary'),
 			statusMessage: document.getElementById('statusMessage'),
+			modifyDetectedValues: document.getElementById('modifyDetectedValues'),
+			manualFields: document.getElementById('manualFields'),
 			productNameInput: document.getElementById('productNameInput'),
 			quantityInput: document.getElementById('quantityInput'),
-			capturePreview: document.getElementById('capturePreview')
+			capturePreview: document.getElementById('capturePreview'),
+			detectedProductIdInput: document.getElementById('detectedProductIdInput'),
+			detectedProductNameInput: document.getElementById('detectedProductNameInput'),
+			detectedQuantityInput: document.getElementById('detectedQuantityInput'),
+			storeForm: document.getElementById('storeForm')
 		};
 
-		// Track recent manual edits to avoid overwriting user input
+		let latestState = {};
+		let nameEdited = false;
 		let quantityEdited = false;
-		let quantityEditedTimer = null;
+		let editingTimer = null;
 
-		stateEls.quantityInput.addEventListener('input', () => {
-			quantityEdited = true;
-			if (quantityEditedTimer) clearTimeout(quantityEditedTimer);
-			quantityEditedTimer = setTimeout(() => { quantityEdited = false; quantityEditedTimer = null; }, 30000);
-		});
+		function setEditingFlag(flagName) {
+			if (flagName === 'name') {
+				nameEdited = true;
+			} else {
+				quantityEdited = true;
+			}
+			if (editingTimer) clearTimeout(editingTimer);
+			editingTimer = setTimeout(() => {
+				nameEdited = false;
+				quantityEdited = false;
+				editingTimer = null;
+			}, 30000);
+		}
 
 		function setText(el, value) {
 			el.textContent = value === null || value === undefined || value === '' ? '-' : String(value);
 		}
 
+		function setFormValue(el, value) {
+			el.value = value === null || value === undefined ? '' : String(value);
+		}
+
+		function syncSubmissionValues() {
+			if (stateEls.modifyDetectedValues.checked) {
+				setFormValue(stateEls.detectedProductIdInput, '');
+				setFormValue(stateEls.detectedProductNameInput, stateEls.productNameInput.value.trim());
+				setFormValue(stateEls.detectedQuantityInput, stateEls.quantityInput.value);
+				return;
+			}
+
+			setFormValue(stateEls.detectedProductIdInput, latestState.detected_product_id || '');
+			setFormValue(stateEls.detectedProductNameInput, latestState.detected_product_name || '');
+			setFormValue(stateEls.detectedQuantityInput, latestState.estimated_quantity || '');
+		}
+
+		function updateMode() {
+			const manualMode = stateEls.modifyDetectedValues.checked;
+			stateEls.manualFields.hidden = !manualMode;
+			stateEls.productNameInput.disabled = !manualMode;
+			stateEls.quantityInput.disabled = !manualMode;
+			stateEls.productNameInput.required = manualMode;
+			stateEls.quantityInput.required = manualMode;
+			stateEls.detectedSummary.textContent = manualMode
+				? 'Manual values will be stored instead of the detected ones.'
+				: 'Detected values will be used automatically.';
+			syncSubmissionValues();
+		}
+
+		stateEls.modifyDetectedValues.addEventListener('change', updateMode);
+		stateEls.productNameInput.addEventListener('input', () => setEditingFlag('name'));
+		stateEls.quantityInput.addEventListener('input', () => setEditingFlag('quantity'));
+		stateEls.storeForm.addEventListener('submit', syncSubmissionValues);
+
+		updateMode();
+
 		function renderState(state) {
+			latestState = state || {};
 			setText(stateEls.detectedId, state.detected_product_id);
 			setText(stateEls.detectedName, state.detected_product_name);
 			setText(stateEls.latestWeight, state.last_weight !== null ? `${state.last_weight} g` : null);
 			setText(stateEls.estimatedQty, state.estimated_quantity);
 			stateEls.statusMessage.textContent = state.message || 'Waiting for device input';
+			stateEls.detectedSummary.textContent = state.detected_product_name && state.estimated_quantity
+				? `Detected: ${state.detected_product_name} with estimated quantity ${state.estimated_quantity}.`
+				: 'Detected values will be used automatically.';
 
-			if (state.detected_product_name && !stateEls.productNameInput.value) {
-				// Don't overwrite when user is editing the product name
-				if (document.activeElement !== stateEls.productNameInput) {
-					stateEls.productNameInput.value = state.detected_product_name;
+			if (!stateEls.modifyDetectedValues.checked) {
+				syncSubmissionValues();
+				if (state.image_url) {
+					stateEls.capturePreview.innerHTML = `<img src="${state.image_url}?t=${Date.now()}" alt="Latest capture">`;
 				}
+				return;
 			}
 
-			if (state.estimated_quantity && Number(state.estimated_quantity) > 0 && document.activeElement !== stateEls.quantityInput) {
+			if (state.detected_product_name && !nameEdited && document.activeElement !== stateEls.productNameInput) {
+				stateEls.productNameInput.value = state.detected_product_name;
+			}
+
+			if (state.estimated_quantity && Number(state.estimated_quantity) > 0 && !quantityEdited && document.activeElement !== stateEls.quantityInput) {
 				stateEls.quantityInput.value = state.estimated_quantity;
 			}
 
 			if (state.image_url) {
 				stateEls.capturePreview.innerHTML = `<img src="${state.image_url}?t=${Date.now()}" alt="Latest capture">`;
 			}
+
+			syncSubmissionValues();
 		}
 
 		async function refreshStatus() {

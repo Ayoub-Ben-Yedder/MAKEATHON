@@ -1,10 +1,11 @@
 import requests
 
-url = "http://10.97.193.192:5000/api/weight"
-#url = "http://10.97.193.40:8765/pick"
+#url = "http://10.97.193.192:5000/api/weight"
+url = "http://10.97.193.40:8765/pick"
 data = {
-    "product": 100.02,
-    "unit": "g"
+    "product": "A",
+    "x": 6,
+    "y": 5
 }
 
 response = requests.post(url, json=data)

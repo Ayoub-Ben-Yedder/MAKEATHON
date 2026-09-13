@@ -5,13 +5,19 @@ from config import ROBOT_SIMULATE
 url = "http://10.97.193.40:8765/pick"
 def store_box(product_id , x, y):
 	print("Sending to Blender : ", product_id, x, y)
+	if(product_id == 1):
+		product = "A"
+	elif (product_id == 2):
+		product = "B"
+	else:
+		product = "XX"
 	data = {
-		"product": product_id,
+		"product": product,
 		"x": x,
 		"y": y
 	}
 	try:
-		response = requests.post(url, json=data, timeout=5)
+		response = requests.post(url, json=data)
 		if response.ok:
 			print("Sent Successfully")
 		else:
@@ -28,7 +34,7 @@ def retrieve_box(product_id, x, y):
 		"y": y
 	}
 	try:
-		response = requests.post(url, json=data, timeout=5)
+		response = requests.post(url, json=data)
 		if response.ok:
 			print("Sent Successfully")
 		else:

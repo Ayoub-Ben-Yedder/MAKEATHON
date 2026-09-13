@@ -5,7 +5,7 @@ from services import inventory, robot, model_ai
 from models.cell import Cell
 from models.box import Box
 from models.product import Product
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import threading
 
@@ -66,6 +66,20 @@ def _calculate_estimated_quantity(db, product_id, measured_weight):
 	return estimated_qty, unit_weight
 
 
+def _box_time_remaining(added_at):
+	if not added_at:
+		return ''
+
+	remaining = (added_at + timedelta(hours=24)) - datetime.utcnow()
+	if remaining.total_seconds() <= 0:
+		return 'READY'
+
+	total_seconds = int(remaining.total_seconds())
+	hours, remainder = divmod(total_seconds, 3600)
+	minutes, seconds = divmod(remainder, 60)
+	return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+
+
 @app.route('/')
 def index():
 	return redirect(url_for('admin'))
@@ -95,7 +109,11 @@ def admin():
 	db = get_session()
 	try:
 		products = [p.as_dict() for p in db.query(Product).order_by(Product.id).all()]
-		boxes = [b.as_dict() for b in db.query(Box).order_by(Box.id).all()]
+		boxes = []
+		for box in db.query(Box).order_by(Box.id).all():
+			box_data = box.as_dict()
+			box_data['time_remaining'] = _box_time_remaining(box.added_at)
+			boxes.append(box_data)
 		cells = [c.as_dict() for c in db.query(Cell).order_by(Cell.id).all()]
 	finally:
 		db.close()

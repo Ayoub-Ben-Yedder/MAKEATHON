@@ -60,7 +60,7 @@
 				</form>
 				<div class="table-wrap">
 					<table>
-					<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th><th>Actions</th></tr>
+					<tr><th>ID</th><th>Product</th><th>Cell</th><th>Quantity</th><th>Added At</th><th>Time Remaining</th><th>Actions</th></tr>
 					{% for b in boxes %}
 					<tr>
 						<td>{{b.id}}</td>
@@ -68,6 +68,7 @@
 						<td><input name="cell_id" type="number" value="{{b.cell_id if b.cell_id is not none else ''}}" form="box-update-{{b.id}}"></td>
 						<td><input name="quantity" type="number" min="0" value="{{b.quantity}}" form="box-update-{{b.id}}" required></td>
 						<td><input name="added_at" type="datetime-local" value="{{(b.added_at or '')[:16]}}" form="box-update-{{b.id}}"></td>
+						<td>{{ b.time_remaining or '-' }}</td>
 						<td class="actions">
 							<form id="box-update-{{b.id}}" action="/admin/boxes/{{b.id}}/update" method="post" class="inline">
 								<button type="submit">Update</button>
